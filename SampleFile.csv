@@ -1,0 +1,6 @@
+Loan_ID,Client_Name,Loan_Amount,Interest_Rate,Start_Date,End_Date,Lender_Name,Lender_Share,Loan_Status,Lead_Lender
+L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,BigBank,40%,Active,Yes
+L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,TrustFinance,35%,Active,No
+L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,SecureInvest,25%,Active,No
+L002,XYZ Holdings,5000000,4.75,2023-05-01,2028-05-01,GlobalCapital,50%,Pending,Yes
+L002,XYZ Holdings,5000000,4.75,2023-05-01,2028-05-01,FutureWealth,50%,Pending,No
