@@ -1,6 +1,11 @@
-Loan_ID,Client_Name,Loan_Amount,Interest_Rate,Start_Date,End_Date,Lender_Name,Lender_Share,Loan_Status,Lead_Lender
-L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,BigBank,40%,Active,Yes
-L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,TrustFinance,35%,Active,No
-L001,ABC Corporation,10000000,5.5,2024-01-15,2034-01-15,SecureInvest,25%,Active,No
-L002,XYZ Holdings,5000000,4.75,2023-05-01,2028-05-01,GlobalCapital,50%,Pending,Yes
-L002,XYZ Holdings,5000000,4.75,2023-05-01,2028-05-01,FutureWealth,50%,Pending,No
+Loan_ID, Borrower_Name, Lead_Bank, Other_Lenders, Interest_Rate_Type, Interest_Rate, Repayment_Schedule, Loan_Tenure_Years, Upfront_Fees, Commitment_Fees, Collateral_Type, Collateral_Value, Covenants, Loan_Purpose, Prepayment_Penalties, Restructuring_Options, Credit_Rating, Risk_Exposure, Loan_Tranche, Amount_Committed
+L001, AlphaCorp, BankA, BankB|BankC, Floating, 4.5%, Monthly, 5, 1.5%, 0.5%, Real_Estate, 10M, Debt/Equity 3:1, Acquisition, 2%, Allowed, A, Low, Senior, 50M
+L002, BetaTech, BankD, BankE, Fixed, 5%, Quarterly, 10, 2%, 0.3%, Equipment, 15M, No_Additional_Debt, Expansion, 1.5%, Not_Allowed, BBB, Medium, Mezzanine, 100M
+L003, GammaEnterprises, BankF, BankG|BankH, Floating, 3.8%, Semi-Annual, 7, 2.5%, 0.25%, Intellectual_Property, 20M, Debt/Equity 4:1, Refinancing, 1%, Allowed, A+, High, Junior, 75M
+L004, DeltaIndustries, BankI, BankJ|BankK, Fixed, 6%, Annual, 15, 1%, 0.4%, Machinery, 30M, No_Additional_Debt, Expansion, 3%, Allowed, BBB+, Medium, Senior, 200M
+L005, EpsilonEnergy, BankL, BankM|BankN|BankO, Floating, 3.7%, Quarterly, 8, 2%, 0.7%, Natural_Resources, 50M, Debt/Equity 2:1, Infrastructure, 2.5%, Not_Allowed, A, Medium, Mezzanine, 300M
+L006, ZetaPharma, BankP, BankQ, Fixed, 5.5%, Semi-Annual, 12, 1.5%, 0.35%, Patents, 25M, R&D_Spending_Limits, Research_And_Development, 2%, Allowed, A-, Low, Senior, 150M
+L007, ThetaTech, BankR, BankS|BankT, Floating, 4.2%, Monthly, 6, 1.8%, 0.5%, Intellectual_Property, 35M, Debt/Equity 3:1, Expansion, 1.7%, Allowed, BBB, Medium, Junior, 120M
+L008, IotaRetail, BankU, BankV|BankW|BankX, Fixed, 6.2%, Quarterly, 20, 2%, 0.4%, Real_Estate, 60M, No_Additional_Debt, Acquisition, 1.5%, Not_Allowed, A, High, Mezzanine, 250M
+L009, KappaLogistics, BankY, BankZ|BankAA, Floating, 3.9%, Monthly, 9, 1.2%, 0.6%, Fleet_Vehicles, 40M, Debt/Equity 2.5:1, Logistics_Expansion, 2.2%, Allowed, BBB+, Low, Senior, 180M
+L010, LambdaConsulting, BankAB, BankAC|BankAD, Fixed, 5.1%, Annual, 7, 1.8%, 0.3%, Intellectual_Property, 20M, R&D_Limits, Market_Expansion, 2%, Allowed, A-, Medium, Mezzanine, 170M
