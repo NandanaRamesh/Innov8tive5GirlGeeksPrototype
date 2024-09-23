@@ -8,7 +8,6 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 loan_data_list = []
 
-
 def generate_text_with_rag(prompt, retrieved_data):
     context = f"Relevant information from the loan database:\n{retrieved_data.to_string(index=False)}"
     full_prompt = f"{context}\n\nUser Prompt: {prompt}"
@@ -19,8 +18,7 @@ def generate_text_with_rag(prompt, retrieved_data):
     except Exception as e:
         return f"Error: {e}"
 
-
-st.title("Syndicated Lending and Loan Structure Analysis with GPT")
+st.markdown("<h1 style='text-align: center;'>GENFI-AI</h1>", unsafe_allow_html=True)
 
 st.header("Upload Files for Analysis")
 uploaded_files = st.file_uploader("Choose files", type=["csv", "json", "xlsx"], accept_multiple_files=True)
