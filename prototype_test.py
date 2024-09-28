@@ -247,3 +247,33 @@ elif service == "Fraud Detection":
                 lodge_complaint(message, email)
         else:
             st.success("This message is classified as SAFE. No fraud detected.")
+elif service in ["Loan Analysis", "Customer Insights", "Risk Assessment"]:
+    st.header(f"{service} - Upload Data")
+    uploaded_files = st.file_uploader("Upload relevant files", type=["csv", "json", "xlsx"], accept_multiple_files=True)
+
+    loan_data_list = []
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            if uploaded_file.type == "text/csv":
+                loan_data = pd.read_csv(uploaded_file)
+            elif uploaded_file.type == "application/json":
+                loan_data = pd.read_json(uploaded_file)
+            elif uploaded_file.type in ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"]:
+                loan_data = pd.read_excel(uploaded_file)
+            else:
+                st.error(f"Unsupported file type: {uploaded_file.type}")
+                continue
+
+            loan_data_list.append(loan_data)
+            st.subheader(f"Uploaded Data from {uploaded_file.name}")
+            st.dataframe(loan_data)
+
+    user_prompt = st.text_area("Enter your analysis question or prompt")
+    
+    if uploaded_files and user_prompt:
+        combined_loan_data = pd.concat(loan_data_list, ignore_index=True)
+        st.write("Data ready for analysis.")
+        
+        st.header("Generated Insights")
+        with st.spinner("Generating insights with Generative AI..."):
+            response_text = generate_text_with_rag(user_prompt, combined_loan_data, "Bank Structure Data")
