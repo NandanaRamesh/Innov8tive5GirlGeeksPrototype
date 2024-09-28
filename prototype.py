@@ -3,6 +3,11 @@ import pandas as pd
 import google.generativeai as genai
 from supabase import create_client, Client
 import io
+import pytesseract
+from PIL import Image
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+import hashlib
 
 # Google Gemini API configuration
 api_key = "AIzaSyCSp7sJdDc84jzr_hOLqVCVWHEAOs0pvgU"
@@ -14,6 +19,14 @@ SUPABASE_URL = "https://okkgejgtoimlgwyccfcd.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ra2dlamd0b2ltbGd3eWNjZmNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc0NjU3MTIsImV4cCI6MjA0MzA0MTcxMn0.IA6cSofMykF2J_REb-TRujB5QrDx0pjtbyNfEtr6a3c"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
+# Hash file content function
+def hash_file(file_content):
+    sha256_hash = hashlib.sha256()
+    sha256_hash.update(file_content)
+    return sha256_hash.hexdigest()
+
+
 # User login with Supabase
 def login_user(email, password):
     try:
@@ -23,6 +36,7 @@ def login_user(email, password):
     except Exception as e:
         st.error(f"Login failed: {e}")
         return None
+
 
 # User signup with Supabase
 def sign_up_user(email, password):
@@ -34,6 +48,7 @@ def sign_up_user(email, password):
         st.error(f"Signup failed: {e}")
         return None
 
+
 # Function to check if file exists in Supabase Storage
 def file_exists_in_supabase(file_name):
     try:
@@ -44,26 +59,39 @@ def file_exists_in_supabase(file_name):
         st.error(f"Error checking file existence: {e}")
         return False
 
-# Modified upload function
-def upload_file_to_supabase(file, file_name):
+
+# Function to upload file hash to Supabase
+def store_file_hash_in_database(file_name, file_hash, email):
     try:
+        data = {
+            "file_name": file_name,
+            "file_hash": file_hash,
+            "email": email
+        }
+        response = supabase.table("FileHashes").insert(data).execute()
+        st.success(f"Hash for {file_name} stored successfully in the database!")
+    except Exception as e:
+        st.error(f"Error storing hash: {e}")
+
+
+# Modified upload function with file hashing
+def upload_file_to_supabase(file, file_name, email):
+    try:
+        file_content = file.read()  # Read the file content as bytes
+        file_hash = hash_file(file_content)  # Hash the file content
+
         if file_exists_in_supabase(file_name):
             st.warning(f"{file_name} already exists in Supabase. Skipping upload.")
         else:
-            file_content = file.read()  # Read the file content as bytes
             response = supabase.storage.from_('Files').upload(file_name, file_content)
             st.success(f"{file_name} uploaded successfully!")
+
+        # Store file hash in the database after upload
+        store_file_hash_in_database(file_name, file_hash, email)
+
     except Exception as e:
         st.error(f"Error uploading {file_name}: {e}")
 
-# Function to retrieve file from Supabase
-def download_file_from_supabase(file_name):
-    try:
-        response = supabase.storage().from_('documents').download(file_name)
-        return response
-    except Exception as e:
-        st.error(f"Error downloading {file_name}: {e}")
-        return None
 
 # Function to generate text with RAG (Retrieve and Generate) model
 def generate_text_with_rag(prompt, retrieved_data, structure_context):
@@ -75,6 +103,7 @@ def generate_text_with_rag(prompt, retrieved_data, structure_context):
         return response.text
     except Exception as e:
         return f"Error: {e}"
+
 
 # UI for authentication
 st.sidebar.title("User Authentication")
@@ -101,7 +130,7 @@ if 'user' in st.session_state:
     st.success(f"Welcome {st.session_state['user'].email}")  # Access user email with dot notation
     allow_upload_to_supabase = True
 else:
-    st.warning("You are not logged in. Your history wont be recorded and your files wont be stored in the database!")
+    st.warning("You are not logged in. Your history won't be recorded and your files won't be stored in the database!")
 
 # Title and headers
 st.markdown("<h1 style='text-align: center;'>GENFI-AI</h1>", unsafe_allow_html=True)
@@ -109,22 +138,136 @@ st.header("Upload Bank Structure File")
 
 # Upload bank structure file (TXT format)
 bank_structure_file = st.file_uploader("Upload Bank Structure (.txt)", type=["txt"])
+
 if bank_structure_file:
     bank_structure_data = bank_structure_file.read().decode('utf-8')
     st.success("Bank structure file uploaded successfully!")
+
     # Upload only if logged in
     if 'user' in st.session_state:
-        upload_file_to_supabase(io.BytesIO(bank_structure_data.encode()), "bank_structure.txt")
+        # Convert bank structure data to bytes for hashing
+        bank_structure_bytes = bank_structure_data.encode('utf-8')
 
-# Upload loan files
-st.header("Upload Loan Files for Analysis")
-uploaded_files = st.file_uploader("Choose files", type=["csv", "json", "xlsx"], accept_multiple_files=True)
+        # Upload and hash the bank structure file
+        upload_file_to_supabase(io.BytesIO(bank_structure_bytes), "bank_structure.txt", st.session_state['user'].email)
 
-loan_data_list = []
+# Chatbot-like interactive form for service selection
+st.header("Service Selection")
 
-if uploaded_files:
-    for uploaded_file in uploaded_files:
-        with st.spinner(f"Reading {uploaded_file.name}..."):
+service = st.selectbox("Choose a service to perform:",
+                       ["Loan Analysis", "Customer Insights", "Risk Assessment", "Fraud Detection", "Customer Feedback",
+                        "Locker Request"])
+
+if service == "Customer Feedback":
+    st.subheader("Provide Your Feedback")
+    with st.form(key="feedback_form"):
+        customer_name = st.text_input("Enter your name")
+        feedback = st.text_area("Enter your feedback")
+        submit_feedback = st.form_submit_button("Submit Feedback")
+        if submit_feedback:
+            st.success(f"Thank you for your feedback, {customer_name}!")
+            # Upload feedback to Supabase or process it
+            if 'user' in st.session_state:
+                feedback_data = {"Customer": customer_name, "Feedback": feedback}
+                # Upload or save feedback somewhere
+
+elif service == "Locker Request":
+    st.subheader("Request a Locker")
+    with st.form(key="locker_form"):
+        customer_name = st.text_input("Enter your name")
+        locker_size = st.selectbox("Select locker size", ["Small", "Medium", "Large"])
+        locker_reason = st.text_area("Reason for locker request")
+        submit_locker = st.form_submit_button("Submit Request")
+        if submit_locker:
+            st.success(f"Locker request submitted, {customer_name}!")
+            # Process or upload the locker request
+            if 'user' in st.session_state:
+                locker_request_data = {"Customer": customer_name, "Locker Size": locker_size, "Reason": locker_reason}
+                # Upload or save locker request
+
+elif service == "Fraud Detection":
+    # Load a simple spam detection model (replace this with your actual model)
+    def load_spam_model():
+        vectorizer = TfidfVectorizer()
+        clf = MultinomialNB()
+
+        # Sample training data for spam detection (replace with more robust data)
+        spam_data = pd.DataFrame({
+            "text": [
+                "You won a prize", "Claim your reward", "Important bank message",
+                "Buy now", "Low interest loan"
+            ],
+            "label": [1, 1, 0, 1, 0]  # 1 = spam, 0 = not spam
+        })
+
+        X = vectorizer.fit_transform(spam_data['text'])
+        y = spam_data['label']
+        clf.fit(X, y)
+        return vectorizer, clf
+
+
+    vectorizer, spam_model = load_spam_model()
+
+
+    # Function to detect spam in text
+    def detect_spam(text):
+        processed_text = vectorizer.transform([text])
+        prediction = spam_model.predict(processed_text)
+        return prediction[0]  # Returns 1 if spam, 0 if not
+
+
+    # Function to extract text from an image using OCR (Tesseract)
+    def extract_text_from_image(image):
+        text = pytesseract.image_to_string(image)
+        return text
+
+
+    # Function to upload fraud complaint to Supabase
+    def lodge_complaint(message, email, complaint_type="Fraud Detection"):
+        try:
+            data = {
+                "email": email,
+                "message": message,
+                "complaint_type": complaint_type,
+            }
+            response = supabase.table("Complaints").insert(data).execute()
+            st.success("Complaint lodged successfully!")
+        except Exception as e:
+            st.error(f"Failed to lodge complaint: {e}")
+
+
+    # UI for Fraud Detection Service
+    st.title("Fraud Detection System")
+
+    # Allow users to upload an image or copy-paste text message
+    fraud_detection_mode = st.selectbox("Select Mode", ["Upload Image", "Enter Text"])
+    message = None
+
+    if fraud_detection_mode == "Upload Image":
+        uploaded_image = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+        if uploaded_image is not None:
+            image = Image.open(uploaded_image)
+            st.image(image, caption="Uploaded Image", use_column_width=True)
+            message = extract_text_from_image(image)
+            st.write(f"Extracted Text: {message}")
+    elif fraud_detection_mode == "Enter Text":
+        message = st.text_area("Enter the suspicious message")
+
+    if message:
+        prediction = detect_spam(message)
+        if prediction == 1:
+            st.error("This message is classified as SPAM. Potential fraud detected.")
+            if st.button("Lodge Complaint"):
+                lodge_complaint(message, email)
+        else:
+            st.success("This message is classified as SAFE. No fraud detected.")
+elif service in ["Loan Analysis", "Customer Insights", "Risk Assessment"]:
+    st.header(f"{service} - Upload Data")
+    uploaded_files = st.file_uploader("Upload relevant files", type=["csv", "json", "xlsx"], accept_multiple_files=True)
+
+    loan_data_list = []
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
             if uploaded_file.type == "text/csv":
                 loan_data = pd.read_csv(uploaded_file)
             elif uploaded_file.type == "application/json":
@@ -136,29 +279,16 @@ if uploaded_files:
                 st.error(f"Unsupported file type: {uploaded_file.type}")
                 continue
 
-            # Upload the loan data file to Supabase only if logged in
-            if 'user' in st.session_state:
-                upload_file_to_supabase(uploaded_file, uploaded_file.name)
-
-            st.write(f"Data from {uploaded_file.name} uploaded successfully!")
             loan_data_list.append(loan_data)
             st.subheader(f"Uploaded Data from {uploaded_file.name}")
             st.dataframe(loan_data)
 
-# User prompt for generating insights
-st.header("Generate Loan Insights")
-user_prompt = st.text_area("Enter your question or analysis prompt:", height=150)
+    user_prompt = st.text_area("Enter your analysis question or prompt")
 
-# Check if loan data and user prompt are available for analysis
-if uploaded_files and user_prompt:
-    combined_loan_data = pd.concat(loan_data_list, ignore_index=True)
-
-    if not combined_loan_data.empty:
+    if uploaded_files and user_prompt:
+        combined_loan_data = pd.concat(loan_data_list, ignore_index=True)
         st.write("Data ready for analysis.")
 
         st.header("Generated Insights")
         with st.spinner("Generating insights with Generative AI..."):
-            response_text = generate_text_with_rag(user_prompt, combined_loan_data, bank_structure_data)
-            st.write(response_text)
-    else:
-        st.error("No data available.")
+            response_text = generate_text_with_rag(user_prompt, combined_loan_data, "Bank Structure Data")
