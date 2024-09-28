@@ -1,0 +1,4 @@
+Transaction ID,Account ID,Date,Amount,Type,Description
+5001,2001,2024-08-15,1000,Credit,Salary
+5002,2001,2024-08-18,-200,Debit,ATM Withdrawal
+5003,2002,2024-08-20,5000,Credit,Transfer from Jane

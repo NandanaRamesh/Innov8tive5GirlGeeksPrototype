@@ -1,0 +1,4 @@
+Loan ID,Customer Name,Loan Amount,Interest Rate,Loan Term (Years),Status
+1001,John Doe,50000,5%,10,Active
+1002,Jane Smith,200000,6.5%,15,Closed
+1003,Alan Walker,120000,7%,7,Active
